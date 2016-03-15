@@ -81,7 +81,7 @@ As such a single Order Taker can be created for the application within the Bypas
 
 Once an Order Taker is obtained, a session token for the application can be obtained from the Bypass auth service using the following example code:
 
-```
+```javascript
 var rp = require('request-promise');
 
 var authToken = new Buffer(
@@ -109,7 +109,7 @@ rp(options).then(function(session) {
 In our example, the venue to be used by the application is determined by the Order Taker used for authentication since each Bypass Order Taker can belong to only one Venue.
 As such, the data for the Venue can be obtained from the Bypass API via:
 
-```
+```javascript
 var rp = require('request-promise');
 
 var sessionToken = "example session token";
@@ -135,7 +135,7 @@ rp(options).then(function(venue) {
 
 An example Venue response would include (subset of all fields shown below):
 
-```
+```javascript
 { id: 86,
   name: 'Bypass WORLD Headquarters',
   concessions: 
@@ -154,7 +154,7 @@ An example Venue response would include (subset of all fields shown below):
 
 Once a location for the order has been selected from the list provided for the Venue, it is necessary to fetch the menu for that location. This can be performed via a simple HTTP GET request:
 
-```
+```javascript
 var rp = require('request-promise');
 
 var concessionId = 319; //<-- Example location ID
@@ -172,7 +172,7 @@ rp(options).then(function(menu) {
 
 An example Menu response would include (subset of all fields shown below):
 
-```
+```javascript
 { categories:
     [{ id: 442,
        name: 'Food',
@@ -197,7 +197,7 @@ The POS client is responsible for creating an order object that properly represe
 
 A simple order will look something like (subset of all fields shown below):
 
-```
+```javascript
 { order:
 	{ uuid: "6a1d10e0-dcab-4de3-979a-4cdb2e0ee428",
 		state: "open",
@@ -224,7 +224,7 @@ Now that an order has been constructed, a payment can be created and attached to
 
 To authorize a CC payment, the application should construct a JSON payload of the necessary data and submit to the Bypass authorization service (https://zuul.bypassmobile.com).
 
-```
+```javascript
 var rp = require('request-promise');
 
 var transactionRequest = {
@@ -258,7 +258,7 @@ rp(options).then(function(transaction) {
 
 The payment attached to the order references the transaction sent to the the authorization service by using the same UUID.
 
-```
+```javascript
 { order:
 	{ uuid: "6a1d10e0-dcab-4de3-979a-4cdb2e0ee428",
 		state: "closed",
@@ -286,7 +286,7 @@ Note that the order state is now "closed" and the balance due is $0.00.
 
 Now that the order has been fully constructed and payment authorized, the order can be sent to Bypass for fulfillment. This can be performed via an HTTP POST:
 
-```
+```javascript
 var rp = require('request-promise');
 
 var order = {} // See definition of completed order from previous section 
@@ -301,7 +301,6 @@ var options = {
 rp(options).then(function(order) {
     // Handle response
 });
-
 ```
 
 The order will now be recorded in the Bypass server-side database, sent for fulfillment as needed, updated in perpetual inventory tracking, included in all reports, etc. etc.
