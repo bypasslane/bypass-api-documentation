@@ -4,16 +4,16 @@ Welcome to the Bypass API!
 
 This documentation is provided as a guide for developing integrations to consume Bypass data as well as developing applications on top of Bypass APIs. Specifically, in this guide we will cover the the guest checkout sequence for in-seat delivery to a customer in a stadium environment.
 
-# Design principles and approach
+# Architecture
 
-## Protocol and data
+## Data Interaction
 
 The Bypass API leverages a REST architecture with JSON as the format for data exchange.
-Most all resource endpoints implement standard HTTP CRUD (Create / POST, Read / GET, Update / PUT, Delete / DELETE) methods, though some are reserved.
+Most resource endpoints implement standard resource CRUD (Create / POST, Read / GET, Update / PUT, Delete / DELETE) methods, though some are reserved.
 
 API endpoint examples include (all under https://api.bypassmobile.com/):
 
-* ```GET /api/venue/orders``` to get a list of orders for a venue 
+* ```GET /api/venue/orders``` to get a list of orders for a venue
 * ```GET /api/venue/location/:location_id/orders``` to get a list of orders for a location within the venue
 * ```POST /api/venue/location/:location_id/orders``` to create an order at a location within the venue
 * ```PUT /api/venue/orders/:order_uuid/payments/:payment_uuid``` to add a payment to an existing order
@@ -31,9 +31,9 @@ For the handling of manually entered credit card numbers, the data is sent direc
 
 ## Distributed Systems
 
-The Bypass API is designed to function as and as part of a distributed system.
+The Bypass API is built as a distributed system.
 In summary this means that resources available within the API can be created or modified throughout the network and the changes will propagate out to the rest of the system as needed.
-To accomplish this, resources designed for distributed management are tagged with a UUID upon creation and that UUID serves as the global identifier of the resource across all services.
+To accomplish this, resources designed for distributed management are tagged with a client-generated UUID upon creation and that UUID serves as the global identifier of the resource across all services.
 
 An example of this approach can be seen when a client POS application tells the Bypass server that a payment has been attached to an existing order:
 
@@ -76,13 +76,13 @@ A simple POS application offering guest checkout can be created using the Bypass
 
 ## Authenticate the user / application
 
-In the case of a guest checkout application it can be assumed that the same user will place every order. 
+In the case of a guest checkout application it can be assumed that the same user will place every order.
 As such a single Order Taker can be created for the application within the Bypass admin application (the process for accomplishing this task is not covered in this documentation).
 
 Once an Order Taker is obtained, a session token for the application can be obtained from the Bypass auth service using the following example code:
 
 ```javascript
-var rp = require('request-promise');
+var request = require('request-promise');
 
 var authToken = new Buffer(
   "example_user_name" + ":" + "example_password"
@@ -98,7 +98,7 @@ var options = {
   json: true
 };
 
-rp(options).then(function(session) {
+request(options).then(function(session) {
   var sessionToken = session.session_token;
   var venueId = session.venue_id;
 });
@@ -110,7 +110,7 @@ In our example, the venue to be used by the application is determined by the Ord
 As such, the data for the Venue can be obtained from the Bypass API via:
 
 ```javascript
-var rp = require('request-promise');
+var request = require('request-promise');
 
 var sessionToken = "example session token";
 var venueId = 86; //<-- Example venue ID
@@ -128,7 +128,7 @@ var options = {
   json: true
 };
 
-rp(options).then(function(venue) {
+request(options).then(function(venue) {
 	// Handle response
 });
 ```
@@ -138,7 +138,7 @@ An example Venue response would include (subset of all fields shown below):
 ```javascript
 { id: 86,
   name: 'Bypass WORLD Headquarters',
-  concessions: 
+  concessions:
   	[{ id: 319,
 	   name: 'Example location',
        description: 'Example description',
@@ -176,7 +176,7 @@ An example Menu response would include (subset of all fields shown below):
 { categories:
     [{ id: 442,
        name: 'Food',
-       items: 
+       items:
          [{ id: 9249,
             name: 'Buffalo Chicken Sandiwch',
             price: '10.0',
@@ -184,7 +184,7 @@ An example Menu response would include (subset of all fields shown below):
          }]
     }]
 }
-       
+
 ```
 
 The downloaded menu can now be displayed to the user.
@@ -204,7 +204,7 @@ A simple order will look something like (subset of all fields shown below):
 		total: "10.00",
 		balance_due: "10.00",
 		location_id: 319,
-		line_items: 
+		line_items:
 			[{ uuid: "200f0dd7-2998-4488-af9e-630eb8bf132b",
 				name: "Buffalo Chicken Sandiwch",
 				price: "10.00",
@@ -215,7 +215,7 @@ A simple order will look something like (subset of all fields shown below):
 }
 ```
 
-Note that the order above is open and has no payments associated with it. 
+Note that the order above is open and has no payments associated with it.
 Additionally, it can be seen that UUIDs have been generated and placed on both the order and each of the line items since the POS client is responsible for creating these objects.
 
 ## Authorize CC Payment
@@ -265,13 +265,13 @@ The payment attached to the order references the transaction sent to the the aut
 		total: "10.00",
 		balance_due: "0.00",
 		location_id: 319,
-		line_items: 
+		line_items:
 			[{ uuid: "200f0dd7-2998-4488-af9e-630eb8bf132b",
 				name: "Buffalo Chicken Sandiwch",
 				price: "10.00",
 				count: 1
 			}],
-		payments: 
+		payments:
 			[{ uuid: "fccb00f0-ac36-4672-a68f-9da5c86393c8",
 				amount: "10.00",
 				payment_type: "credit"
@@ -289,7 +289,7 @@ Now that the order has been fully constructed and payment authorized, the order 
 ```javascript
 var rp = require('request-promise');
 
-var order = {} // See definition of completed order from previous section 
+var order = {} // See definition of completed order from previous section
 
 var options = {
   url: 'http://api.bypassmobile.com/api/venue/concessions/319/orders',
